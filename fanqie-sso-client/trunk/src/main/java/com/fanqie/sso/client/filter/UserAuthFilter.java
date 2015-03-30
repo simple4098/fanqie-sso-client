@@ -6,6 +6,8 @@ import com.fanqie.sso.client.util.FanQieSsoClient;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jasig.cas.client.util.AbstractCasFilter;
+import org.jasig.cas.client.util.AssertionHolder;
 import org.jasig.cas.client.util.AssertionThreadLocalFilter;
 import org.jasig.cas.client.util.CommonUtils;
 import org.jasig.cas.client.validation.Assertion;
@@ -125,8 +127,16 @@ public class UserAuthFilter implements Filter {
                 }else {
                     ticketValidationFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
                 }
+            }else {
+                assertion = (Assertion) (session == null ? request
+                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
+                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
+                AssertionHolder.setAssertion(assertion);
+                filterChain.doFilter(request,response);
+                return;
+
             }
-            threadLocalFilter.doFilter(httpServletRequest,httpServletResponse, filterChain);
+            //threadLocalFilter.doFilter(httpServletRequest,httpServletResponse, filterChain);
         }else {
             httpServletRequest.getRequestDispatcher(uri).forward(httpServletRequest, httpServletResponse);
             return;
