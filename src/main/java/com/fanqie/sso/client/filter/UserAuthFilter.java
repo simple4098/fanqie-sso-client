@@ -2,6 +2,7 @@ package com.fanqie.sso.client.filter;
 
 import com.fanqie.sso.client.authentication.AuthenticationFanQieFilter;
 import com.fanqie.sso.client.session.SingleSignOutFanQieFilter;
+import com.fanqie.sso.client.util.Constants;
 import com.fanqie.sso.client.util.FanQieSsoClient;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +48,7 @@ public class UserAuthFilter implements Filter {
     //退出url
     private String logoutUrl;
     private String artifactParameterName = "ticket";
-    public static final String CONST_CAS_ASSERTION = "_const_cas_assertion_";
+
 
     //退出过滤器
     private SingleSignOutFanQieFilter signOutFilter=null;
@@ -108,13 +109,14 @@ public class UserAuthFilter implements Filter {
 
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse)response;
+        HttpSession session = httpServletRequest.getSession();
         httpServletRequest.setAttribute("loginUrl",loginUrl);
         httpServletRequest.setAttribute("logoutUrl",logoutUrl);
         String uri = httpServletRequest.getRequestURI();
         if (!ArrayUtils.contains(excludeUrls,uri)){
             signOutFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
-            HttpSession session = httpServletRequest.getSession(false);
-            Assertion assertion = session != null ? (Assertion) session.getAttribute(CONST_CAS_ASSERTION) : null;
+            Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
+            ((HttpServletRequest) request).getSession().setAttribute("userInfo",assertion);
             if (assertion==null){
                 //获取验证票据
                 String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
@@ -131,6 +133,7 @@ public class UserAuthFilter implements Filter {
                 assertion = (Assertion) (session == null ? request
                         .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
                         .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
+                ((HttpServletRequest) request).getSession().setAttribute("userInfo",assertion);
                 AssertionHolder.setAssertion(assertion);
                 filterChain.doFilter(request,response);
                 return;
