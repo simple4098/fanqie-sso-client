@@ -2,7 +2,6 @@ package com.fanqie.sso.client.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.util.Assert;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -62,7 +61,9 @@ public class FanQieSsoClient {
 
     public static void isTrue(String ... arrays){
         for (String v:arrays){
-            Assert.hasText(v);
+           if (StringUtils.isEmpty(v)){
+               throw  new RuntimeException("参数不能为空!");
+           }
         }
 
 
