@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jasig.cas.client.util.AbstractCasFilter;
 import org.jasig.cas.client.util.AssertionHolder;
-import org.jasig.cas.client.util.AssertionThreadLocalFilter;
 import org.jasig.cas.client.util.CommonUtils;
 import org.jasig.cas.client.validation.Assertion;
 import org.jasig.cas.client.validation.Cas20ProxyReceivingTicketValidationFilter;
@@ -58,15 +57,14 @@ public class UserAuthFilter implements Filter {
     private Cas20ProxyReceivingTicketValidationFilter ticketValidationFilter = null;
     private Cas20ServiceTicketValidator cas20ServiceTicketValidator=null;
     // 存放Assertion到ThreadLocal中
-    private AssertionThreadLocalFilter threadLocalFilter=null;
+   /* private AssertionThreadLocalFilter threadLocalFilter=null;*/
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         signOutFilter = new SingleSignOutFanQieFilter();
         authenticationFilter = new AuthenticationFanQieFilter();
         ticketValidationFilter = new Cas20ProxyReceivingTicketValidationFilter();
-        threadLocalFilter = new AssertionThreadLocalFilter();
-
+       // threadLocalFilter = new AssertionThreadLocalFilter();
         try {
             Properties p = new Properties();
             String excludeUrl=filterConfig.getInitParameter("excludes");
@@ -84,11 +82,14 @@ public class UserAuthFilter implements Filter {
             }else {
                 in = this.getClass().getResourceAsStream("/development/sso.properties");
             }
-            if (StringUtils.isEmpty(excludeUrl)){
-                throw  new RuntimeException("UserAuthFilter 过滤器;exclude 参数不能为空");
-            }
-            excludeUrls=StringUtils.split(excludeUrl,";");
             p.load(in);
+
+            if (StringUtils.isEmpty(excludeUrl) || StringUtils.isEmpty(projectHostName) || StringUtils.isEmpty(projectIndex)){
+                throw  new RuntimeException("UserAuthFilter 过滤器;excludes、projectUrl、projectIndex 参数不能为空");
+            }
+            if (StringUtils.isNotEmpty(excludeUrl)){
+                excludeUrls=StringUtils.split(excludeUrl,";");
+            }
             ssoHostName = p.getProperty("sso.hostname.url");
             ssoLogin = p.getProperty("sso.login");
             ssoLogout = p.getProperty("sso.logout");
@@ -106,22 +107,19 @@ public class UserAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse)response;
         HttpSession session = httpServletRequest.getSession();
         httpServletRequest.setAttribute("loginUrl",loginUrl);
         httpServletRequest.setAttribute("logoutUrl",logoutUrl);
         String uri = httpServletRequest.getRequestURI();
-        if (!ArrayUtils.contains(excludeUrls,uri)){
+        if (excludeUrls!=null && !ArrayUtils.contains(excludeUrls,uri)){
             signOutFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
             Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
-            ((HttpServletRequest) request).getSession().setAttribute("userInfo",assertion);
             if (assertion==null){
                 //获取验证票据
                 String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
                 if (CommonUtils.isEmpty(ticket) ) {
-                    //authenticationFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
                     String serviceUrl = authenticationFilter.constructServiceUrl(httpServletRequest, httpServletResponse);
                     String urlToRedirectTo = authenticationFilter.urlToRedirectTo(serviceUrl);
                     httpServletResponse.sendRedirect(urlToRedirectTo);
@@ -133,13 +131,11 @@ public class UserAuthFilter implements Filter {
                 assertion = (Assertion) (session == null ? request
                         .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
                         .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
-                ((HttpServletRequest) request).getSession().setAttribute("userInfo",assertion);
                 AssertionHolder.setAssertion(assertion);
                 filterChain.doFilter(request,response);
                 return;
 
             }
-            //threadLocalFilter.doFilter(httpServletRequest,httpServletResponse, filterChain);
         }else {
             httpServletRequest.getRequestDispatcher(uri).forward(httpServletRequest, httpServletResponse);
             return;
