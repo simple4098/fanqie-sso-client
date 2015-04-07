@@ -6,15 +6,11 @@
 
     <groupId>com.fanqie.app</groupId>
     <artifactId>sso-client</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
     <properties>
-        <aspectj.version>1.7.1.RELEASE</aspectj.version>
-        <java.version>1.6</java.version>
+        <java.version>1.7</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <slf4j.version>1.6.4</slf4j.version>
-        <spring.version>3.1.1.RELEASE</spring.version>
-        <spring-security.version>3.1.0.RELEASE</spring-security.version>
     </properties>
 
     <repositories>
@@ -25,28 +21,24 @@
             <url>http://repo.fanqielaile.com/nexus/content/groups/public/</url>
         </repository>
     </repositories>
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>Nexus Release Repository </name>
+            <url>http://repo.fanqielaile.com/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Nexus snapshot Repository </name>
+            <url>http://repo.fanqielaile.com/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>javax.servlet.jsp</groupId>
-            <artifactId>jsp-api</artifactId>
-            <version>2.1</version>
-        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
             <version>2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet.jsp.jstl</groupId>
-            <artifactId>jstl-api</artifactId>
-            <version>1.2</version>
-
         </dependency>
         <dependency>
             <groupId>org.jasig.cas.client</groupId>
@@ -58,26 +50,21 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.2.1</version>
+            <version>3.3.2</version>
         </dependency>
-
     </dependencies>
-   <!-- <build>
-        <finalName>fanqie-user-web</finalName>
-        <resources>
-            &lt;!&ndash; 控制资源文件的拷贝 &ndash;&gt;
-            <resource>
-                <directory>src/main/resources/</directory>
-                <targetPath>${project.build.directory}/classes</targetPath>
-            </resource>
-            &lt;!&ndash;拷贝不同的运行环境的资源文件&ndash;&gt;
-            <resource>
-                <directory>src/main/resources/profiles/${package.environment}</directory>
-                <targetPath>${project.build.directory}/classes</targetPath>
-            </resource>
-        </resources>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.2</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
--->
-
 </project>
