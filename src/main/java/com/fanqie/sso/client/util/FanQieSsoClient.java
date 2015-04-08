@@ -53,10 +53,11 @@ public class FanQieSsoClient {
      * @param projectHostName  客户端主机名
      * @param projectIndex   客户端首页
      */
-    public static  String logout(String hostName,String logout,String projectHostName,String projectIndex){
+    public static  String logout(String hostName,String logout,String projectHostName,String projectIndex) throws UnsupportedEncodingException{
         isTrue(hostName,logout,projectHostName,projectIndex);
         StringBuilder url = new StringBuilder();
-        return url.append(hostName).append(logout).append("?url=").append(projectHostName).append(projectIndex).toString();
+        String returnUrl = urlEncode(projectHostName+projectIndex);
+        return url.append(hostName).append(logout).append("?url=").append(returnUrl).toString();
     }
 
     public static void isTrue(String ... arrays){
