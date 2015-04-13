@@ -21,6 +21,8 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * DESC : 客户端-不用过滤的url
@@ -113,7 +115,14 @@ public class UserAuthFilter implements Filter {
         httpServletRequest.setAttribute("loginUrl",loginUrl);
         httpServletRequest.setAttribute("logoutUrl",logoutUrl);
         String uri = httpServletRequest.getRequestURI();
-        if (excludeUrls!=null && !ArrayUtils.contains(excludeUrls,uri)){
+        boolean isStaticUrl = FanQieSsoClient.matcherStaticUrl(uri);
+        //如果是静态文件路径，直接直接跳转下去
+        if (isStaticUrl){
+            filterChain.doFilter(request,response);
+            return;
+        }
+        boolean b = FanQieSsoClient.matcherUrl(excludeUrls,uri);
+        if (!b){
             signOutFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
             Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
             if (assertion==null){

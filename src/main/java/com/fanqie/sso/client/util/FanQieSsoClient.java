@@ -1,10 +1,13 @@
 package com.fanqie.sso.client.util;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * DESC : 处理客服端的url
@@ -13,6 +16,7 @@ import java.net.URLEncoder;
  * @version: v1.0.0
  */
 public class FanQieSsoClient {
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private  static  final Logger log =   Logger.getLogger(FanQieSsoClient.class);
     private FanQieSsoClient() {
     }
@@ -70,6 +74,51 @@ public class FanQieSsoClient {
 
     }
 
+    /**
+     *
+     * @param excludeUrls 客服端 不需要过滤url数组；或者正则匹配
+     * @param uri 当前uri
+     * @return 如果包含或者正则匹配成功的url 返回 true;反之返回false
+     */
+    public static boolean matcherUrl(String[] excludeUrls, String uri) {
+        if(excludeUrls!=null){
+            for (String uriV : excludeUrls){
+                /*Pattern p = Pattern.compile(uriV);
+                Matcher m = p.matcher(uri);*/
+                boolean b =  antPathMatcher.match(uriV,uri);
+                if (b) {
+                    return true;
+                }
+            }
+            if (ArrayUtils.contains(excludeUrls, uri)){
+                return true;
+            }
+        }
+        return false;
+    }
+    public static boolean isEmpty(Map<?, ?> map) {
+        return (map == null || map.isEmpty());
+    }
+
+    public static boolean isEmpty(Collection<?> collection) {
+        return (collection == null || collection.isEmpty());
+    }
+
+    /**
+     * 过滤静态文件
+     * @param url
+     */
+    public static boolean matcherStaticUrl(String url)  {
+        if (StringUtils.isNotEmpty(url)){
+            if (url.endsWith(".js") || url.endsWith(".jpeg") || url.endsWith(".png") || url.endsWith(".gif")){
+                return true;
+            }
+        }
+        return false;
+
+
+    }
+
     public static void main(String[] args) throws UnsupportedEncodingException {
         System.out.println(urlEncode("http://web1.app.com:8081/home"));
         String ssoHostName="http://my.app.com:8080";
@@ -80,4 +129,6 @@ public class FanQieSsoClient {
         System.out.println(loginUrl(ssoHostName,login,projectHost,index));
         System.out.println(logout(ssoHostName,logout,projectHost,index));
     }
+
+
 }
