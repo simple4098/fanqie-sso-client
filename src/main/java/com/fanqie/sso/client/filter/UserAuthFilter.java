@@ -124,7 +124,10 @@ public class UserAuthFilter implements Filter {
         boolean b = FanQieSsoClient.matcherUrl(excludeUrls,uri);
         if (!b){
             signOutFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
-            Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
+            //Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
+            Assertion assertion  = (Assertion) (session == null ? request
+                    .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
+                    .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
             if (assertion==null){
                 //获取验证票据
                 String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
@@ -137,9 +140,7 @@ public class UserAuthFilter implements Filter {
                     ticketValidationFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
                 }
             }else {
-                assertion = (Assertion) (session == null ? request
-                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
-                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
+
                 AssertionHolder.setAssertion(assertion);
                 filterChain.doFilter(request,response);
                 return;
