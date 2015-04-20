@@ -132,6 +132,8 @@ public class UserAuthFilter implements Filter {
                 //获取验证票据
                 String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
                 if (CommonUtils.isEmpty(ticket) ) {
+                    //当项目中的session失效后,就设置当前的url为登录后跳转的页面
+                    authenticationFilter.setService(projectHostName+uri);
                     String serviceUrl = authenticationFilter.constructServiceUrl(httpServletRequest, httpServletResponse);
                     String urlToRedirectTo = authenticationFilter.urlToRedirectTo(serviceUrl);
                     httpServletResponse.sendRedirect(urlToRedirectTo);
