@@ -110,7 +110,7 @@ public class FanQieSsoClient {
      */
     public static boolean matcherStaticUrl(String url)  {
         if (StringUtils.isNotEmpty(url)){
-            if (url.endsWith(".js") || url.endsWith(".jpeg") || url.endsWith(".png") || url.endsWith(".gif")){
+            if (url.endsWith(".js") || url.endsWith(".jpeg") || url.endsWith(".png") || url.endsWith(".gif")|| url.endsWith(".ico")){
                 return true;
             }
         }
