@@ -81,6 +81,10 @@ public class UserAuthFilter implements Filter {
                 if (envValue.equals("pro")){
                     in = this.getClass().getResourceAsStream("/production/sso.properties");
                 }
+                //线上test
+                if (envValue.equals("test")){
+                    in = this.getClass().getResourceAsStream("/test/sso.properties");
+                }
             }else {
                 in = this.getClass().getResourceAsStream("/development/sso.properties");
             }
