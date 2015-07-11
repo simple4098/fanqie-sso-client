@@ -4,7 +4,13 @@ import com.fanqie.sso.client.authentication.AuthenticationFanQieFilter;
 import com.fanqie.sso.client.session.SingleSignOutFanQieFilter;
 import com.fanqie.sso.client.util.Constants;
 import com.fanqie.sso.client.util.FanQieSsoClient;
-import org.apache.commons.lang3.ArrayUtils;
+import com.fanqie.sso.client.util.HttpClientUtil;
+import net.rubyeye.xmemcached.MemcachedClient;
+import net.rubyeye.xmemcached.XMemcachedClientBuilder;
+import net.rubyeye.xmemcached.command.BinaryCommandFactory;
+import net.rubyeye.xmemcached.exception.MemcachedException;
+import net.rubyeye.xmemcached.transcoders.SerializingTranscoder;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jasig.cas.client.util.AbstractCasFilter;
@@ -20,9 +26,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 /**
  * DESC : 客户端-不用过滤的url
@@ -49,6 +54,9 @@ public class UserAuthFilter implements Filter {
     //退出url
     private String logoutUrl;
     private String artifactParameterName = "ticket";
+    private String loginValidate;
+    private XMemcachedClientBuilder xMemcachedClientBuilder;
+    private MemcachedClient memcachedClient;
 
 
     //退出过滤器
@@ -96,6 +104,18 @@ public class UserAuthFilter implements Filter {
             if (StringUtils.isNotEmpty(excludeUrl)){
                 excludeUrls=StringUtils.split(excludeUrl,";");
             }
+            loginValidate = p.getProperty("pms.authenticate");
+            String hostName = p.getProperty("memcached.hostName");
+            String port = p.getProperty("memcached.port");
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(hostName,Integer.valueOf(port));
+            List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>();
+            addressList.add(inetSocketAddress);
+            xMemcachedClientBuilder = new XMemcachedClientBuilder(addressList);
+            xMemcachedClientBuilder.setConnectionPoolSize(2);
+            xMemcachedClientBuilder.setCommandFactory(new BinaryCommandFactory());
+            xMemcachedClientBuilder.setTranscoder(new SerializingTranscoder());
+            memcachedClient = xMemcachedClientBuilder.build();
+
             ssoHostName = p.getProperty("sso.hostname.url");
             ssoLogin = p.getProperty("sso.login");
             ssoLogout = p.getProperty("sso.logout");
@@ -113,48 +133,80 @@ public class UserAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        HttpServletResponse httpServletResponse = (HttpServletResponse)response;
-        HttpSession session = httpServletRequest.getSession();
-        httpServletRequest.setAttribute("loginUrl",loginUrl);
-        httpServletRequest.setAttribute("logoutUrl",logoutUrl);
-        String uri = httpServletRequest.getRequestURI();
-        boolean isStaticUrl = FanQieSsoClient.matcherStaticUrl(uri);
-        //如果是静态文件路径，直接直接跳转下去
-        if (isStaticUrl){
-            filterChain.doFilter(request,response);
-            return;
-        }
-        boolean b = FanQieSsoClient.matcherUrl(excludeUrls,uri);
-        if (!b){
-            signOutFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
-            //Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
-            Assertion assertion  = (Assertion) (session == null ? request
-                    .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
-                    .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
-            if (assertion==null){
-                //获取验证票据
-                String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
-                if (CommonUtils.isEmpty(ticket) ) {
-                    //当项目中的session失效后,就设置当前的url为登录后跳转的页面
-                    authenticationFilter.setService(projectHostName+uri);
-                    String serviceUrl = authenticationFilter.constructServiceUrl(httpServletRequest, httpServletResponse);
-                    String urlToRedirectTo = authenticationFilter.urlToRedirectTo(serviceUrl);
-                    httpServletResponse.sendRedirect(urlToRedirectTo);
-                    return;
-                }else {
-                    ticketValidationFilter.doFilter(httpServletRequest,httpServletResponse,filterChain);
-                }
-            }else {
-
-                AssertionHolder.setAssertion(assertion);
-                filterChain.doFilter(request,response);
+        String token = request.getParameter("token");
+        String appId = request.getParameter("appId");
+        String innId = request.getParameter("innId");
+        String timestamp = request.getParameter("timestamp");
+        String userCode = request.getParameter("userCode");
+        //token 是客户端登陆 不进单点登录
+        if (StringUtils.isEmpty(token)) {
+            HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+            HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+            httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+            HttpSession session = httpServletRequest.getSession();
+            httpServletRequest.setAttribute("loginUrl", loginUrl);
+            httpServletRequest.setAttribute("logoutUrl", logoutUrl);
+            String uri = httpServletRequest.getRequestURI();
+            boolean isStaticUrl = FanQieSsoClient.matcherStaticUrl(uri);
+            //如果是静态文件路径，直接直接跳转下去
+            if (isStaticUrl) {
+                filterChain.doFilter(request, response);
                 return;
-
             }
+            boolean b = FanQieSsoClient.matcherUrl(excludeUrls, uri);
+            if (!b) {
+                signOutFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+                //Assertion assertion = session != null ? (Assertion) session.getAttribute(Constants.CONST_CAS_ASSERTION) : null;
+                Assertion assertion = (Assertion) (session == null ? request
+                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION) : session
+                        .getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION));
+                if (assertion == null) {
+                    //获取验证票据
+                    String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
+                    if (CommonUtils.isEmpty(ticket)) {
+                        //当项目中的session失效后,就设置当前的url为登录后跳转的页面
+                        authenticationFilter.setService(projectHostName + uri);
+                        String serviceUrl = authenticationFilter.constructServiceUrl(httpServletRequest, httpServletResponse);
+                        String urlToRedirectTo = authenticationFilter.urlToRedirectTo(serviceUrl);
+                        httpServletResponse.sendRedirect(urlToRedirectTo);
+                        return;
+                    } else {
+                        ticketValidationFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
+                    }
+                } else {
+                    AssertionHolder.setAssertion(assertion);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+            } else {
+                httpServletRequest.getRequestDispatcher(uri).forward(httpServletRequest, httpServletResponse);
+                return;
+            }
+        //pms 去验证token值， 并保持在
         }else {
-            httpServletRequest.getRequestDispatcher(uri).forward(httpServletRequest, httpServletResponse);
-            return;
+            Map<String,String> map = new HashMap<String,String>();
+            map.put("innId",innId);
+            map.put("userCode",userCode);
+            map.put("appId",appId);
+            map.put("userCode",userCode);
+            map.put("timestamp",timestamp);
+            map.put("token",token);
+            String s = HttpClientUtil.httpPost(loginValidate, map);
+            JSONObject jsonObject = JSONObject.fromObject(s);
+            if (jsonObject.get("status").toString()== Constants.SUCCESS){
+                //存入memcached token-key userCode-value
+                try {
+                    memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, (Object) userCode);
+                } catch (InterruptedException e) {
+                    throw  new RuntimeException("更新 Memcached 缓存被中断");
+                } catch (MemcachedException e) {
+                    throw  new RuntimeException("更新 Memcached 缓存错误");
+                }
+
+            }else {
+                throw  new RuntimeException("客户端登陆验证不通过");
+            }
+
         }
     }
     @Override

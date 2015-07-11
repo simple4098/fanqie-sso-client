@@ -9,4 +9,5 @@ package com.fanqie.sso.client.util;
 public class Constants {
     //session 存用户参数名称
     public static final String CONST_CAS_ASSERTION = "_const_cas_assertion_";
+    public static final String SUCCESS = "200";
 }
