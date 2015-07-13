@@ -188,15 +188,15 @@ public class UserAuthFilter implements Filter {
             map.put("innId",innId);
             map.put("userCode",userCode);
             map.put("appId",appId);
-            map.put("userCode",userCode);
             map.put("timestamp",timestamp);
             map.put("token",token);
             String s = HttpClientUtil.httpPost(loginValidate, map);
             JSONObject jsonObject = JSONObject.fromObject(s);
-            if (jsonObject.get("status").toString()== Constants.SUCCESS){
+            if (Constants.SUCCESS.equals(jsonObject.get("status").toString())){
                 //存入memcached token-key userCode-value
                 try {
                     memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, (Object) userCode);
+                    filterChain.doFilter(request, response);
                 } catch (InterruptedException e) {
                     throw  new RuntimeException("更新 Memcached 缓存被中断");
                 } catch (MemcachedException e) {
