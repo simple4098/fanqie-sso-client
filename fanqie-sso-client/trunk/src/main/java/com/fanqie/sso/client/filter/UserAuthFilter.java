@@ -142,7 +142,6 @@ public class UserAuthFilter implements Filter {
         if (StringUtils.isEmpty(token)) {
             HttpServletRequest httpServletRequest = (HttpServletRequest) request;
             HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-            httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
             HttpSession session = httpServletRequest.getSession();
             httpServletRequest.setAttribute("loginUrl", loginUrl);
             httpServletRequest.setAttribute("logoutUrl", logoutUrl);
