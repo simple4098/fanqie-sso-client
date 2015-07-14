@@ -133,15 +133,19 @@ public class UserAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
         String token = request.getParameter("token");
         String appId = request.getParameter("appId");
         String innId = request.getParameter("innId");
         String timestamp = request.getParameter("timestamp");
         String userCode = request.getParameter("userCode");
+        if (!StringUtils.isEmpty(userCode)){
+            userCode = new String(userCode.getBytes("ISO-8859-1"),"utf-8");
+        }
         //token 是客户端登陆 不进单点登录
         if (StringUtils.isEmpty(token)) {
-            HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-            HttpServletResponse httpServletResponse = (HttpServletResponse) response;
             HttpSession session = httpServletRequest.getSession();
             httpServletRequest.setAttribute("loginUrl", loginUrl);
             httpServletRequest.setAttribute("logoutUrl", logoutUrl);
