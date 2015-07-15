@@ -198,7 +198,7 @@ public class UserAuthFilter implements Filter {
             if (Constants.SUCCESS.equals(jsonObject.get("status").toString())){
                 //存入memcached token-key userCode-value
                 try {
-                    memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, (Object) userCode);
+                    memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode);
                     filterChain.doFilter(request, response);
                 } catch (InterruptedException e) {
                     throw  new RuntimeException("更新 Memcached 缓存被中断");
@@ -207,7 +207,13 @@ public class UserAuthFilter implements Filter {
                 }
 
             }else {
-                throw  new RuntimeException("客户端登陆验证不通过");
+                //throw  new RuntimeException("客户端登陆验证不通过");
+                Map<String,Object> param = new HashMap<String, Object>();
+                param.put("message","客户端登陆验证不通过");
+                param.put("status","400");
+                JSONObject jsonObject1 = JSONObject.fromObject(param);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().print(jsonObject1.toString());
             }
 
         }
