@@ -1,5 +1,7 @@
 package com.fanqie.sso.client.filter;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.fanqie.sso.client.authentication.AuthenticationFanQieFilter;
 import com.fanqie.sso.client.session.SingleSignOutFanQieFilter;
 import com.fanqie.sso.client.util.Constants;
@@ -10,7 +12,6 @@ import net.rubyeye.xmemcached.XMemcachedClientBuilder;
 import net.rubyeye.xmemcached.command.BinaryCommandFactory;
 import net.rubyeye.xmemcached.exception.MemcachedException;
 import net.rubyeye.xmemcached.transcoders.SerializingTranscoder;
-import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jasig.cas.client.util.AbstractCasFilter;
@@ -31,12 +32,13 @@ import java.util.*;
 
 /**
  * DESC : 客户端-不用过滤的url
+ *
  * @author : 番茄木-ZLin
  * @data : 2015/3/19
  * @version: v1.0.0
  */
 public class UserAuthFilter implements Filter {
-    private  static  final Logger logger =   Logger.getLogger(UserAuthFilter.class);
+    private static final Logger logger = Logger.getLogger(UserAuthFilter.class);
     //不需要过滤的url
     private String[] excludeUrls;
     //认证中心hostname
@@ -60,12 +62,12 @@ public class UserAuthFilter implements Filter {
 
 
     //退出过滤器
-    private SingleSignOutFanQieFilter signOutFilter=null;
+    private SingleSignOutFanQieFilter signOutFilter = null;
     //登录认证，未登录用户导向CAS Server进行认证
-    private AuthenticationFanQieFilter authenticationFilter=null;
+    private AuthenticationFanQieFilter authenticationFilter = null;
     //单点登录cas_client 提供的票据验证过滤器
     private Cas20ProxyReceivingTicketValidationFilter ticketValidationFilter = null;
-    private Cas20ServiceTicketValidator cas20ServiceTicketValidator=null;
+    private Cas20ServiceTicketValidator cas20ServiceTicketValidator = null;
     // 存放Assertion到ThreadLocal中
    /* private AssertionThreadLocalFilter threadLocalFilter=null;*/
 
@@ -74,40 +76,40 @@ public class UserAuthFilter implements Filter {
         signOutFilter = new SingleSignOutFanQieFilter();
         authenticationFilter = new AuthenticationFanQieFilter();
         ticketValidationFilter = new Cas20ProxyReceivingTicketValidationFilter();
-       // threadLocalFilter = new AssertionThreadLocalFilter();
+        // threadLocalFilter = new AssertionThreadLocalFilter();
         try {
             Properties p = new Properties();
-            String excludeUrl=filterConfig.getInitParameter("excludes");
+            String excludeUrl = filterConfig.getInitParameter("excludes");
             String envValue = filterConfig.getInitParameter("env");
             projectHostName = filterConfig.getInitParameter("projectUrl");
-            projectIndex= filterConfig.getInitParameter("projectIndex");
+            projectIndex = filterConfig.getInitParameter("projectIndex");
             InputStream in = null;
-            if (StringUtils.isNotEmpty(envValue)){
-                if (envValue.equals("dev")){
+            if (StringUtils.isNotEmpty(envValue)) {
+                if (envValue.equals("dev")) {
                     in = this.getClass().getResourceAsStream("/development/sso.properties");
                 }
-                if (envValue.equals("pro")){
+                if (envValue.equals("pro")) {
                     in = this.getClass().getResourceAsStream("/production/sso.properties");
                 }
                 //线上test
-                if (envValue.equals("test")){
+                if (envValue.equals("test")) {
                     in = this.getClass().getResourceAsStream("/test/sso.properties");
                 }
-            }else {
+            } else {
                 in = this.getClass().getResourceAsStream("/development/sso.properties");
             }
             p.load(in);
 
-            if (StringUtils.isEmpty(excludeUrl) || StringUtils.isEmpty(projectHostName) || StringUtils.isEmpty(projectIndex)){
-                throw  new RuntimeException("UserAuthFilter 过滤器;excludes、projectUrl、projectIndex 参数不能为空");
+            if (StringUtils.isEmpty(excludeUrl) || StringUtils.isEmpty(projectHostName) || StringUtils.isEmpty(projectIndex)) {
+                throw new RuntimeException("UserAuthFilter 过滤器;excludes、projectUrl、projectIndex 参数不能为空");
             }
-            if (StringUtils.isNotEmpty(excludeUrl)){
-                excludeUrls=StringUtils.split(excludeUrl,";");
+            if (StringUtils.isNotEmpty(excludeUrl)) {
+                excludeUrls = StringUtils.split(excludeUrl, ";");
             }
             loginValidate = p.getProperty("pms.authenticate");
             String hostName = p.getProperty("memcached.hostName");
             String port = p.getProperty("memcached.port");
-            InetSocketAddress inetSocketAddress = new InetSocketAddress(hostName,Integer.valueOf(port));
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(hostName, Integer.valueOf(port));
             List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>();
             addressList.add(inetSocketAddress);
             xMemcachedClientBuilder = new XMemcachedClientBuilder(addressList);
@@ -121,8 +123,8 @@ public class UserAuthFilter implements Filter {
             ssoLogout = p.getProperty("sso.logout");
             loginUrl = FanQieSsoClient.loginUrl(ssoHostName, ssoLogin, projectHostName, projectIndex);
             logoutUrl = FanQieSsoClient.logout(ssoHostName, ssoLogout, projectHostName, projectIndex);
-            authenticationFilter.setCasServerLoginUrl(ssoHostName+ssoLogin);
-            authenticationFilter.setService(projectHostName+projectIndex);
+            authenticationFilter.setCasServerLoginUrl(ssoHostName + ssoLogin);
+            authenticationFilter.setService(projectHostName + projectIndex);
             cas20ServiceTicketValidator = new Cas20ServiceTicketValidator(ssoHostName);
             ticketValidationFilter.setTicketValidator(cas20ServiceTicketValidator);
             ticketValidationFilter.setServerName(projectHostName);
@@ -141,8 +143,8 @@ public class UserAuthFilter implements Filter {
         String innId = request.getParameter("innId");
         String timestamp = request.getParameter("timestamp");
         String userCode = request.getParameter("userCode");
-        if (!StringUtils.isEmpty(userCode)){
-            userCode = new String(userCode.getBytes("ISO-8859-1"),"utf-8");
+        if (!StringUtils.isEmpty(userCode)) {
+            userCode = new String(userCode.getBytes("ISO-8859-1"), "utf-8");
         }
         //token 是客户端登陆 不进单点登录
         if (StringUtils.isEmpty(token)) {
@@ -185,39 +187,47 @@ public class UserAuthFilter implements Filter {
                 httpServletRequest.getRequestDispatcher(uri).forward(httpServletRequest, httpServletResponse);
                 return;
             }
-        //pms 去验证token值， 并保持在
-        }else {
-            Map<String,String> map = new HashMap<String,String>();
-            map.put("innId",innId);
-            map.put("userCode",userCode);
-            map.put("appId",appId);
-            map.put("timestamp",timestamp);
-            map.put("token",token);
+            //pms 去验证token值， 并保持在
+        } else {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("innId", innId);
+            map.put("userCode", userCode);
+            map.put("appId", appId);
+            map.put("timestamp", timestamp);
+            map.put("token", token);
+
             String s = HttpClientUtil.httpPost(loginValidate, map);
-            JSONObject jsonObject = JSONObject.fromObject(s);
-            if (Constants.SUCCESS.equals(jsonObject.get("status").toString())){
+            JSONObject jsonObject = JSON.parseObject(s);
+            if (Constants.SUCCESS.equals(jsonObject.get("status").toString())) {
                 //存入memcached token-key userCode-value
                 try {
                     memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode);
                     filterChain.doFilter(request, response);
                 } catch (InterruptedException e) {
-                    throw  new RuntimeException("更新 Memcached 缓存被中断");
+                    Map<String, Object> param = new HashMap<>();
+                    param.put("message", "更新 Memcached 缓存被中断");
+                    param.put("status", "400");
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().print(JSON.toJSONString(param));
                 } catch (MemcachedException e) {
-                    throw  new RuntimeException("更新 Memcached 缓存错误");
+                    Map<String, Object> param = new HashMap<>();
+                    param.put("message", "更新 Memcached 缓存错误");
+                    param.put("status", "400");
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().print(JSON.toJSONString(param));
                 }
 
-            }else {
-                //throw  new RuntimeException("客户端登陆验证不通过");
-                Map<String,Object> param = new HashMap<String, Object>();
-                param.put("message","客户端登陆验证不通过");
-                param.put("status","400");
-                JSONObject jsonObject1 = JSONObject.fromObject(param);
+            } else {
+                Map<String, Object> param = new HashMap<>();
+                param.put("message", "客户端登陆验证不通过");
+                param.put("status", "400");
                 response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().print(jsonObject1.toString());
+                response.getWriter().print(JSON.toJSONString(param));
             }
 
         }
     }
+
     @Override
     public void destroy() {
 
