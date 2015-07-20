@@ -62,7 +62,7 @@ public class HttpClientUtil {
 		HttpClient httpClient = obtHttpClient();
 		HttpPost httpPost = new HttpPost(url);
 		List<NameValuePair> nameValuePairs = commonParam(map);
-		httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs,"GBK"));
+		httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 		HttpResponse response = httpClient.execute(httpPost);
 		HttpEntity entity = response.getEntity();
 		String value="";
