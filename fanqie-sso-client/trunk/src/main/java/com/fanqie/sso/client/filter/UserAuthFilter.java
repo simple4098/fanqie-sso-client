@@ -143,9 +143,7 @@ public class UserAuthFilter implements Filter {
         String innId = request.getParameter("innId");
         String timestamp = request.getParameter("timestamp");
         String userCode = request.getParameter("userCode");
-        if (!StringUtils.isEmpty(userCode)) {
-            userCode = new String(userCode.getBytes("ISO-8859-1"), "utf-8");
-        }
+
         //token 是客户端登陆 不进单点登录
         if (StringUtils.isEmpty(token)) {
             HttpSession session = httpServletRequest.getSession();
@@ -199,6 +197,11 @@ public class UserAuthFilter implements Filter {
             String s = HttpClientUtil.httpPost(loginValidate, map);
             JSONObject jsonObject = JSON.parseObject(s);
             if (Constants.SUCCESS.equals(jsonObject.get("status").toString())) {
+                //对中文编码
+                if (!StringUtils.isEmpty(userCode)) {
+                    logger.debug("sso client code");
+                    userCode = new String(userCode.getBytes("ISO-8859-1"), "utf-8");
+                }
                 //存入memcached token-key userCode-value
                 try {
                     memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode);
