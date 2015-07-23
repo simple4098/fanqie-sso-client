@@ -193,8 +193,8 @@ public class UserAuthFilter implements Filter {
             map.put("appId", appId);
             map.put("timestamp", timestamp);
             map.put("token", token);
-
             String s = HttpClientUtil.httpPost(loginValidate, map);
+            logger.debug("===============loginValidate=============： "+ s);
             JSONObject jsonObject = JSON.parseObject(s);
             if (Constants.SUCCESS.equals(jsonObject.get("status").toString())) {
                 //对中文编码
