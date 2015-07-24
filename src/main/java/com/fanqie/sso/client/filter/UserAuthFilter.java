@@ -197,11 +197,6 @@ public class UserAuthFilter implements Filter {
             logger.debug("===============loginValidate=============： "+ s);
             JSONObject jsonObject = JSON.parseObject(s);
             if (Constants.SUCCESS.equals(jsonObject.get("status").toString())) {
-                //对中文编码
-                if (!StringUtils.isEmpty(userCode)) {
-                    logger.debug("sso client code");
-                    userCode = new String(userCode.getBytes("ISO-8859-1"), "utf-8");
-                }
                 //存入memcached token-key userCode-value
                 try {
                     memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode);
