@@ -20,19 +20,19 @@
             <id>nexus</id>
             <layout>default</layout>
             <name>nexus</name>
-            <url>http://repo.fanqielaile.com/nexus/content/groups/public/</url>
+            <url>http://repo.fanqielaile.com/content/groups/public/</url>
         </repository>
     </repositories>
     <distributionManagement>
         <repository>
             <id>releases</id>
             <name>Nexus Release Repository </name>
-            <url>http://repo.fanqielaile.com/nexus/content/repositories/releases/</url>
+            <url>http://repo.fanqielaile.com/content/repositories/releases/</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
             <name>Nexus snapshot Repository </name>
-            <url>http://repo.fanqielaile.com/nexus/content/repositories/snapshots/</url>
+            <url>http://repo.fanqielaile.com/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
