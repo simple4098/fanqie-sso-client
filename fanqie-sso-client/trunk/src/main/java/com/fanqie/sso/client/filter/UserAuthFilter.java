@@ -137,7 +137,7 @@ public class UserAuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+        /*httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");*/
         String token = request.getParameter("token");
         String appId = request.getParameter("appId");
         String innId = request.getParameter("innId");
