@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
  * @author mowei
  */
 public class ResourceBundleUtil {
-    protected static ResourceBundle bundle = ResourceBundle.getBundle("config");
+    protected static ResourceBundle bundle = ResourceBundle.getBundle("config-sso");
 
     public static String getString(String key) {
         try {
