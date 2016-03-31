@@ -110,8 +110,13 @@ public class FanQieSsoClient {
      */
     public static boolean matcherStaticUrl(String url)  {
         if (StringUtils.isNotEmpty(url)){
-            if (url.endsWith(".js")||url.endsWith(".css")  || url.endsWith(".jpeg") || url.endsWith(".png") || url.endsWith(".gif")|| url.endsWith(".ico")|| url.endsWith(".jpg")){
-                return true;
+            String end = url.substring(url.lastIndexOf(".")+1, url.length());
+            String string = ResourceBundleUtil.getString("sso.matcherStaticUrl");
+            String[] split = string.split(",");
+            for (String s:split){
+                if (s.equalsIgnoreCase(end)){
+                    return true;
+                }
             }
         }
         return false;
@@ -120,14 +125,25 @@ public class FanQieSsoClient {
     }
 
     public static void main(String[] args) throws UnsupportedEncodingException {
-        System.out.println(urlEncode("http://web1.app.com:8081/home"));
+       /* System.out.println(urlEncode("http://web1.app.com:8081/home"));
         String ssoHostName="http://my.app.com:8080";
         String login = "/login";
         String logout="/logout";
         String projectHost="http://web1.app.com:8081";
         String index = "/home";
         System.out.println(loginUrl(ssoHostName,login,projectHost,index));
-        System.out.println(logout(ssoHostName,logout,projectHost,index));
+        System.out.println(logout(ssoHostName,logout,projectHost,index));*/
+        String url = "http://www.dsds.com/index";
+        /*String end = url.substring(url.lastIndexOf("."), url.length());
+        System.out.println(end.equalsIgnoreCase(".jpeg"));*/
+        String end = url.substring(url.lastIndexOf(".")+1, url.length());
+        String string = ResourceBundleUtil.getString("sso.matcherStaticUrl");
+        String[] split = string.split(",");
+        for (String s:split){
+            if (s.equalsIgnoreCase(end)){
+                System.out.print(s+"=============");
+            }
+        }
     }
 
 
