@@ -199,7 +199,7 @@ public class UserAuthFilter implements Filter {
             if (Constants.SUCCESS.equals(jsonObject.get("status").toString())) {
                 //存入memcached token-key userCode-value
                 try {
-                    memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode);
+                    memcachedClient.setWithNoReply(token, 30 * 24 * 60 * 60, userCode.concat(",").concat(innId));
                     filterChain.doFilter(request, response);
                 } catch (InterruptedException e) {
                     Map<String, Object> param = new HashMap<>();
