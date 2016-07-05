@@ -59,6 +59,8 @@ public class UserAuthFilter implements Filter {
     private String loginValidate;
     private XMemcachedClientBuilder xMemcachedClientBuilder;
     private MemcachedClient memcachedClient;
+    //环境变量
+    private String env;
 
 
     //退出过滤器
@@ -80,19 +82,18 @@ public class UserAuthFilter implements Filter {
         try {
             Properties p = new Properties();
             String excludeUrl = filterConfig.getInitParameter("excludes");
-            String envValue = filterConfig.getInitParameter("env");
             projectHostName = filterConfig.getInitParameter("projectUrl");
             projectIndex = filterConfig.getInitParameter("projectIndex");
             InputStream in = null;
-            if (StringUtils.isNotEmpty(envValue)) {
-                if (envValue.equals("dev")) {
+            if (StringUtils.isNotEmpty(env)) {
+                if (env.equals("dev")) {
                     in = this.getClass().getResourceAsStream("/development/sso.properties");
                 }
-                if (envValue.equals("pro")) {
+                if (env.equals("pro")) {
                     in = this.getClass().getResourceAsStream("/production/sso.properties");
                 }
                 //线上test
-                if (envValue.equals("test")) {
+                if (env.equals("test")) {
                     in = this.getClass().getResourceAsStream("/test/sso.properties");
                 }
             } else {
@@ -232,4 +233,11 @@ public class UserAuthFilter implements Filter {
     }
 
 
+    public String getEnv() {
+        return env;
+    }
+
+    public void setEnv(String env) {
+        this.env = env;
+    }
 }
