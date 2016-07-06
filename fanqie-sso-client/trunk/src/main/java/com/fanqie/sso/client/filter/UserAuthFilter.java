@@ -48,7 +48,7 @@ public class UserAuthFilter implements Filter {
     //退出认证
     private String ssoLogout;
     //客户端hostName
-    private String projectHostName;
+   // private String projectHostName;
     //客户端首页
     private String projectIndex;
     //登录url
@@ -61,6 +61,8 @@ public class UserAuthFilter implements Filter {
     private MemcachedClient memcachedClient;
     //环境变量
     private String env;
+    private String projectUrl;
+    private String excludes;
 
 
     //退出过滤器
@@ -81,9 +83,9 @@ public class UserAuthFilter implements Filter {
         // threadLocalFilter = new AssertionThreadLocalFilter();
         try {
             Properties p = new Properties();
-            String excludeUrl = filterConfig.getInitParameter("excludes");
-            projectHostName = filterConfig.getInitParameter("projectUrl");
-            projectIndex = filterConfig.getInitParameter("projectIndex");
+            //String excludeUrl = filterConfig.getInitParameter("excludes");
+            //projectHostName = filterConfig.getInitParameter("projectUrl");
+            //projectIndex = filterConfig.getInitParameter("projectIndex");
             InputStream in = null;
             if (StringUtils.isNotEmpty(env)) {
                 if (env.equals("dev")) {
@@ -101,11 +103,11 @@ public class UserAuthFilter implements Filter {
             }
             p.load(in);
 
-            if (StringUtils.isEmpty(excludeUrl) || StringUtils.isEmpty(projectHostName) || StringUtils.isEmpty(projectIndex)) {
+            if (StringUtils.isEmpty(excludes) || StringUtils.isEmpty(projectUrl) || StringUtils.isEmpty(projectIndex)) {
                 throw new RuntimeException("UserAuthFilter 过滤器;excludes、projectUrl、projectIndex 参数不能为空");
             }
-            if (StringUtils.isNotEmpty(excludeUrl)) {
-                excludeUrls = StringUtils.split(excludeUrl, ";");
+            if (StringUtils.isNotEmpty(excludes)) {
+                excludeUrls = StringUtils.split(excludes, ";");
             }
             loginValidate = p.getProperty("pms.authenticate");
             String hostName = p.getProperty("memcached.hostName");
@@ -122,13 +124,13 @@ public class UserAuthFilter implements Filter {
             ssoHostName = p.getProperty("sso.hostname.url");
             ssoLogin = p.getProperty("sso.login");
             ssoLogout = p.getProperty("sso.logout");
-            loginUrl = FanQieSsoClient.loginUrl(ssoHostName, ssoLogin, projectHostName, projectIndex);
-            logoutUrl = FanQieSsoClient.logout(ssoHostName, ssoLogout, projectHostName, projectIndex);
+            loginUrl = FanQieSsoClient.loginUrl(ssoHostName, ssoLogin, projectUrl, projectIndex);
+            logoutUrl = FanQieSsoClient.logout(ssoHostName, ssoLogout, projectUrl, projectIndex);
             authenticationFilter.setCasServerLoginUrl(ssoHostName + ssoLogin);
-            authenticationFilter.setService(projectHostName + projectIndex);
+            authenticationFilter.setService(projectUrl + projectIndex);
             cas20ServiceTicketValidator = new Cas20ServiceTicketValidator(ssoHostName);
             ticketValidationFilter.setTicketValidator(cas20ServiceTicketValidator);
-            ticketValidationFilter.setServerName(projectHostName);
+            ticketValidationFilter.setServerName(projectUrl);
         } catch (IOException e) {
             logger.error(e);
         }
@@ -169,7 +171,7 @@ public class UserAuthFilter implements Filter {
                     String ticket = CommonUtils.safeGetParameter(httpServletRequest, artifactParameterName);
                     if (CommonUtils.isEmpty(ticket)) {
                         //当项目中的session失效后,就设置当前的url为登录后跳转的页面
-                        authenticationFilter.setService(projectHostName + uri);
+                        authenticationFilter.setService(projectUrl + uri);
                         String serviceUrl = authenticationFilter.constructServiceUrl(httpServletRequest, httpServletResponse);
                         String urlToRedirectTo = authenticationFilter.urlToRedirectTo(serviceUrl);
                         httpServletResponse.sendRedirect(urlToRedirectTo);
@@ -239,5 +241,29 @@ public class UserAuthFilter implements Filter {
 
     public void setEnv(String env) {
         this.env = env;
+    }
+
+    public String getProjectUrl() {
+        return projectUrl;
+    }
+
+    public void setProjectUrl(String projectUrl) {
+        this.projectUrl = projectUrl;
+    }
+
+    public String getExcludes() {
+        return excludes;
+    }
+
+    public void setExcludes(String excludes) {
+        this.excludes = excludes;
+    }
+
+    public String getProjectIndex() {
+        return projectIndex;
+    }
+
+    public void setProjectIndex(String projectIndex) {
+        this.projectIndex = projectIndex;
     }
 }
